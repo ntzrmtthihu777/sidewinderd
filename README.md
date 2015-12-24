@@ -1,28 +1,37 @@
-sidewinderd
-===========
+sidewinderd - Logitech G710+ branch
+===================================
 
-Sidewinder daemon - Linux support for Microsoft Sidewinder X4 / X6 keyboards
+Sidewinder daemon - Linux support for Logitech G710+ keyboard
 
 
-What's this?
-============
+About this branch
+=================
 
-sidewinderd is a userland daemon, which takes care of your Microsoft Sidewinder
-X4 / X6 keyboard's special keys. It's in an early development stage, but you can
-already test basic functionality. This driver has been made, because there is no
-complete and user-friendly Sidewinder X4 and X6 driver out there. Wattos' Linux
-Sidewinder X6 driver (https://github.com/Wattos/LinuxSidewinderX6) doesn't
-support our beloved Sidewinder X4s and EvilAndi's x4daemon
-(http://geekparadise.de/x4daemon/) needs to be recompiled everytime you want to
-change a button and also doesn't support setting any LEDs, profile switching and
-macro playing / recording. Also, it seems to have minor issues with media keys,
-due to libusb's nature of detaching the device from hid-generic kernel driver to
-gain full access over it.
+sidewinderd was originally a userland daemon for supporting the Microsoft
+Sidewinder X4 and X6 gaming keyboards under Linux. Now, I was able to get the
+Logitech G710+ to work with this program.
 
-So, there is need for a complete and stable driver for Linux. We're supporting
-both, the Sidewinder X4 and X6. Our goal is to reach feature-parity with
-Microsoft's Windows drivers and open up the doors for other, non-Microsoft
-gaming keyboards and mice.
+Special thanks to nirenjan, for his extremely well written documentation about
+the Logitech G710+ (https://github.com/nirenjan/g710plus-linux).
+
+Support for Sidewinder X4 and X6 is broken in this branch, as I've just hacked
+this branch quick & dirty. In the long run, I will do some major code
+refactoring and get both keyboards working in master.
+
+
+How to record macros
+====================
+
+1. Choose the profile you want to use, by pressing either M1, M2 or M3.
+2. Press MR key. Record LED will light up.
+3. Now, press one the G1 - G6 keys you want to use.
+4. Your keyboard is in Record Mode now. On the Logitech G710+, there is currently
+no visual feedback, when your keyboard is in Record Mode.
+5. Every keypress will get recorded, including delays. Excluded keys are: M1 -
+M3, MR, G1 - G6, Game Mode, WASD Backlight, Backlight, Play/Pause, Stop,
+Previous Song, Next Song.
+6. When you're finished, press MR again. The Macro will get saved under
+~/.local/share/sidewinderd/profile_[1-3]/s[1-6].xml.
 
 
 Dependencies
@@ -45,9 +54,6 @@ Features
 - X6 only: toggle Macropad between Macro-mode and Numpad-mode
 - Very basic configuration setup
 
-
-Todo
-====
 
 - Auto profile and Auto LED support
 - Documentation
