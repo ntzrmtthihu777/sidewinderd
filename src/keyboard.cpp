@@ -32,13 +32,12 @@ const int EXTRA_KEY_GAMECENTER = 0x10;
 const int EXTRA_KEY_RECORD = 0x11;
 const int EXTRA_KEY_PROFILE = 0x14;
 
-void Keyboard::featureRequest(unsigned char data) {
+void Keyboard::featureRequest() {
 	unsigned char buf[2];
-	/* buf[0] is Report Number, buf[1] is the control byte */
-	buf[0] = 0x7;
-	buf[1] = data << profile_;
-	buf[1] |= macroPad_;
-	buf[1] |= recordLed_ << 5;
+	/* buf[0] is Report ID, buf[1] is the control byte */
+	buf[0] = 0x6;
+	buf[1] = 0x10 << profile_;
+	buf[1] |= recordLed_ << 7;
 	ioctl(fd_, HIDIOCSFEATURE(sizeof(buf)), buf);
 }
 
@@ -52,6 +51,11 @@ void Keyboard::setupPoll() {
 
 void Keyboard::toggleMacroPad() {
 	macroPad_ ^= 1;
+	featureRequest();
+}
+
+void Keyboard::setProfile(int profile) {
+	profile_ = profile;
 	featureRequest();
 }
 
@@ -74,6 +78,7 @@ struct KeyData Keyboard::getInput() {
 	unsigned char buf[MAX_BUF];
 	nBytes = read(fd_, buf, MAX_BUF);
 
+#if 0
 	std::cout << "Bytes read: " << nBytes << std::endl;
 	std::cout << "Buffer: ";
 
@@ -82,56 +87,37 @@ struct KeyData Keyboard::getInput() {
 	}
 
 	std::cout << std::endl;
+#endif
 
-	if (nBytes == 5 && buf[0] == 8) {
+	if (nBytes == 4 && buf[0] == 0x03) {
 		/*
 		 * cutting off buf[0], which is used to differentiate between macro and
 		 * media keys. Our task is now to translate the buffer codes to
 		 * something we can work with. Here is a table, where you can look up
 		 * the keys and buffer, if you want to improve the current method:
 		 *
-		 * S1	0x08 0x01 0x00 0x00 0x00 - buf[1]
-		 * S2	0x08 0x02 0x00 0x00 0x00 - buf[1]
-		 * S3	0x08 0x04 0x00 0x00 0x00 - buf[1]
-		 * S4	0x08 0x08 0x00 0x00 0x00 - buf[1]
-		 * S5	0x08 0x10 0x00 0x00 0x00 - buf[1]
-		 * S6	0x08 0x20 0x00 0x00 0x00 - buf[1]
-		 * S7	0x08 0x40 0x00 0x00 0x00 - buf[1]
-		 * S8	0x08 0x80 0x00 0x00 0x00 - buf[1]
-		 * S9	0x08 0x00 0x01 0x00 0x00 - buf[2]
-		 * S10	0x08 0x00 0x02 0x00 0x00 - buf[2]
-		 * S11	0x08 0x00 0x04 0x00 0x00 - buf[2]
-		 * S12	0x08 0x00 0x08 0x00 0x00 - buf[2]
-		 * S13	0x08 0x00 0x10 0x00 0x00 - buf[2]
-		 * S14	0x08 0x00 0x20 0x00 0x00 - buf[2]
-		 * S15	0x08 0x00 0x40 0x00 0x00 - buf[2]
-		 * S16	0x08 0x00 0x80 0x00 0x00 - buf[2]
-		 * S17	0x08 0x00 0x00 0x01 0x00 - buf[3]
-		 * S18	0x08 0x00 0x00 0x02 0x00 - buf[3]
-		 * S19	0x08 0x00 0x00 0x04 0x00 - buf[3]
-		 * S20	0x08 0x00 0x00 0x08 0x00 - buf[3]
-		 * S21	0x08 0x00 0x00 0x10 0x00 - buf[3]
-		 * S22	0x08 0x00 0x00 0x20 0x00 - buf[3]
-		 * S23	0x08 0x00 0x00 0x40 0x00 - buf[3]
-		 * S24	0x08 0x00 0x00 0x80 0x00 - buf[3]
-		 * S25	0x08 0x00 0x00 0x00 0x01 - buf[4]
-		 * S26	0x08 0x00 0x00 0x00 0x02 - buf[4]
-		 * S27	0x08 0x00 0x00 0x00 0x04 - buf[4]
-		 * S28	0x08 0x00 0x00 0x00 0x08 - buf[4]
-		 * S29	0x08 0x00 0x00 0x00 0x10 - buf[4]
-		 * S30	0x08 0x00 0x00 0x00 0x20 - buf[4]
+		 * G1	0x03 0x01 0x00 0x00 - buf[1]
+		 * G2	0x03 0x02 0x00 0x00 - buf[1]
+		 * G3	0x03 0x04 0x00 0x00 - buf[1]
+		 * G4	0x03 0x08 0x00 0x00 - buf[1]
+		 * G5	0x03 0x10 0x00 0x00 - buf[1]
+		 * G6	0x03 0x20 0x00 0x00 - buf[1]
+		 * M1	0x03 0x00 0x10 0x00 - buf[2]
+		 * M2	0x03 0x00 0x20 0x00 - buf[2]
+		 * M3	0x03 0x00 0x40 0x00 - buf[2]
+		 * MR	0x03 0x00 0x80 0x00 - buf[2]
 		 */
-		key = (static_cast<int>(buf[1]))
-			| (static_cast<int>(buf[2]) << 8)
-			| (static_cast<int>(buf[3]) << 16)
-			| (static_cast<int>(buf[4]) << 24);
-		key = ffs(key);
-		keyData.index = key;
-		keyData.type = KeyData::KeyType::Macro;
-	} else if (nBytes == 8 && buf[0] == 1 && buf[6]) {
-		/* buf[0] == 1 means media keys, buf[6] shows pressed key */
-		keyData.index = buf[6];
-		keyData.type = KeyData::KeyType::Extra;
+		if (buf[2] == 0) {
+			key = (static_cast<int>(buf[1]));
+			key = ffs(key);
+			keyData.index = key;
+			keyData.type = KeyData::KeyType::Macro;
+		} else if (buf[1] == 0) {
+			key = (static_cast<int>(buf[2])) >> 4;
+			key = ffs(key);
+			keyData.index = key;
+			keyData.type = KeyData::KeyType::Extra;
+		}
 	}
 
 	return keyData;
@@ -198,7 +184,7 @@ void Keyboard::recordMacro(std::string path) {
 	while (isRecordMode) {
 		keyData = pollDevice(2);
 
-		if (keyData.index == EXTRA_KEY_RECORD && keyData.type == KeyData::KeyType::Extra) {
+		if (keyData.index == 4 && keyData.type == KeyData::KeyType::Extra) {
 			recordLed_ = 0;
 			featureRequest();
 			isRecordMode = false;
@@ -245,44 +231,54 @@ void Keyboard::recordMacro(std::string path) {
 }
 
 void Keyboard::handleKey(struct KeyData *keyData) {
-	if (keyData->type == KeyData::KeyType::Macro) {
-		Key key(keyData);
-		std::string macroPath = key.getMacroPath(profile_);
-		std::thread thread(playMacro, macroPath, virtInput_);
-		thread.detach();
-	} else if (keyData->type == KeyData::KeyType::Extra) {
-		if (keyData->index == EXTRA_KEY_GAMECENTER) {
-			toggleMacroPad();
-		} else if (keyData->index == EXTRA_KEY_RECORD) {
-			handleRecordMode();
-		} else if (keyData->index == EXTRA_KEY_PROFILE) {
-			switchProfile();
+	if (keyData->index != 0) {
+		if (keyData->type == KeyData::KeyType::Macro) {
+			Key key(keyData);
+			std::string macroPath = key.getMacroPath(profile_);
+			std::thread thread(playMacro, macroPath, virtInput_);
+			thread.detach();
+		} else if (keyData->type == KeyData::KeyType::Extra) {
+			if (keyData->index == 1) {
+				/* M1 key */
+				setProfile(0);
+			} else if (keyData->index == 2) {
+				/* M2 key */
+				setProfile(1);
+			} else if (keyData->index == 3) {
+				/* M3 key */
+				setProfile(2);
+			} else if (keyData->index == 4) {
+				/* MR key */
+				handleRecordMode();
+			}
 		}
 	}
 }
 
 void Keyboard::handleRecordMode() {
 	bool isRecordMode = true;
-	recordLed_ = 3;
+	recordLed_ = 1;
 	featureRequest();
 
 	while (isRecordMode) {
 		struct KeyData keyData = pollDevice(1);
 
-		if (keyData.type == KeyData::KeyType::Macro) {
-			recordLed_ = 2;
-			featureRequest();
-			isRecordMode = false;
-			Key key(&keyData);
-			recordMacro(key.getMacroPath(profile_));
-		} else if (keyData.type == KeyData::KeyType::Extra) {
-			/* deactivate Record LED */
-			recordLed_ = 0;
-			featureRequest();
-			isRecordMode = false;
+		if (keyData.index != 0) {
+			if (keyData.type == KeyData::KeyType::Macro) {
+				recordLed_ = 1;
+				featureRequest();
+				isRecordMode = false;
+				Key key(&keyData);
+				recordMacro(key.getMacroPath(profile_));
+			} else if (keyData.type == KeyData::KeyType::Extra) {
+				/* deactivate Record LED */
+				recordLed_ = 0;
+				featureRequest();
+				isRecordMode = false;
 
-			if (keyData.index != EXTRA_KEY_RECORD) {
-				handleKey(&keyData);
+				if (keyData.index != 4) {
+					handleKey(&keyData);
+				}
 			}
 		}
 	}
@@ -302,6 +298,15 @@ struct KeyData Keyboard::pollDevice(nfds_t nfds) {
 void Keyboard::listen() {
 	struct KeyData keyData = pollDevice(1);
 	handleKey(&keyData);
+}
+
+void Keyboard::disableGhostInput() {
+	/* we need to zero out the report, so macro keys don't emit numbers */
+	unsigned char buf[13] = {};
+	/* buf[0] is Report ID */
+	buf[0] = 0x9;
+
+	ioctl(fd_, HIDIOCSFEATURE(sizeof(buf)), buf);
 }
 
 Keyboard::Keyboard(struct sidewinderd::DeviceData *deviceData, libconfig::Config *config, struct passwd *pw) {
@@ -330,6 +335,7 @@ Keyboard::Keyboard(struct sidewinderd::DeviceData *deviceData, libconfig::Config
 		std::cout << "Can't open hidraw interface" << std::endl;
 	}
 
+	disableGhostInput();
 	featureRequest();
 	setupPoll();
 }
@@ -337,6 +343,6 @@ Keyboard::Keyboard(struct sidewinderd::DeviceData *deviceData, libconfig::Config
 Keyboard::~Keyboard() {
 	delete virtInput_;
 	recordLed_ = 0;
-	featureRequest(0);
+	featureRequest();
 	close(fd_);
 }

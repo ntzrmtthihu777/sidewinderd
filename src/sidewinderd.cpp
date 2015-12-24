@@ -190,6 +190,8 @@ int findDevice(struct sidewinderd::DeviceData *deviceData) {
 			&& std::string(udev_device_get_property_value(dev, "ID_MODEL_ID")) == deviceData->pid
 			&& udev_device_get_property_value(dev, "ID_VENDOR_ID") != NULL
 			&& std::string(udev_device_get_property_value(dev, "ID_VENDOR_ID")) == deviceData->vid
+			&& udev_device_get_property_value(dev, "ID_USB_INTERFACE_NUM") != NULL
+			&& std::string(udev_device_get_property_value(dev, "ID_USB_INTERFACE_NUM")) == "00"
 			&& udev_device_get_property_value(dev, "ID_INPUT_KEYBOARD") != NULL
 			&& strstr(sysPath, "event")
 			&& udev_device_get_parent_with_subsystem_devtype(dev, "usb", NULL)) {

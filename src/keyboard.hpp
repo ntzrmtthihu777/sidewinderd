@@ -34,11 +34,13 @@ class Keyboard {
 		sidewinderd::DeviceData *deviceData_;
 		VirtualInput *virtInput_;
 		struct KeyData getInput();
-		void featureRequest(unsigned char data = 0x04);
+		void disableGhostInput();
+		void featureRequest();
 		void setupPoll();
 		static void playMacro(std::string macroPath, VirtualInput *virtInput);
 		void recordMacro(std::string path);
 		void toggleMacroPad();
+		void setProfile(int profile);
 		void switchProfile();
 		struct KeyData pollDevice(nfds_t nfds);
 		void handleKey(struct KeyData *keyData);
