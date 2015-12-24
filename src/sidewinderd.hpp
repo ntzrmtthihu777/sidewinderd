@@ -23,7 +23,8 @@ namespace sidewinderd {
 	 */
 	std::vector<std::pair<std::string, std::string>> deviceList = {
 		{"045e", "074b"},	/* Microsoft Sidewinder X6 */
-		{"045e", "0768"}	/* Microsoft Sidewinder X4 */
+		{"045e", "0768"},	/* Microsoft Sidewinder X4 */
+		{"046d", "c24d"}	/* Logitech G710+ */
 	};
 };
 

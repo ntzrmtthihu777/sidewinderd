@@ -74,6 +74,15 @@ struct KeyData Keyboard::getInput() {
 	unsigned char buf[MAX_BUF];
 	nBytes = read(fd_, buf, MAX_BUF);
 
+	std::cout << "Bytes read: " << nBytes << std::endl;
+	std::cout << "Buffer: ";
+
+	for (int i = 0; i < nBytes; i++) {
+		std::cout << std::hex << (int) buf[i] << " ";
+	}
+
+	std::cout << std::endl;
+
 	if (nBytes == 5 && buf[0] == 8) {
 		/*
 		 * cutting off buf[0], which is used to differentiate between macro and
